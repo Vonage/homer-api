@@ -213,6 +213,9 @@ class Client
                         break;
         }
 
+        parse_str($_SERVER['QUERY_STRING'], $query_params);
+        $data['query'] = $query_params;
+
 	if(isset($data['data']))
         {
         	// translate the JSON to an Object for use however you want
@@ -511,7 +514,7 @@ class Client
      */
     public function setUrl($pUrl)
     {
-        $this->url = $pUrl;
+        $this->url = strtok($pUrl, '?');
         return $this;
     }
 

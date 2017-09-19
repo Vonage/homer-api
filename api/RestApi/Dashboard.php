@@ -198,6 +198,60 @@ class Dashboard {
         return $json;
     }
     
+    public function showNewSearch($query) {
+        $paramtype = gettype($query);
+        syslog(LOG_NOTICE, "Dashboard:showNewSearch(): paramtype is $paramtype");
+        foreach ($query as $param_name => $param_value) {
+            syslog(LOG_NOTICE, "Dashboard:showNewSearch(): param_name is $param_name, param_value is $param_value");
+        }
+        $search_array = array();
+        $range_array = array();
+        
+        foreach ($query as $param_name => $param_value) {
+            if ($param_name == "from" or $param_name == "to") {
+                $range_array[$param_name] = date("Y-m-d\TH:i:s", $param_value);
+            }
+            else {
+                $search_array[$param_name] = $param_value;
+            }
+        }
+
+        $db = $this->getContainer('db');
+        $db->dbconnect();
+
+        if (isset($_SESSION['uid'])) {
+            $uid = $_SESSION['uid'];
+            if (count($range_array) > 0) {
+                $sql = "DELETE FROM setting WHERE uid='?' AND param_name='timerange'";
+                $sql  = $db->makeQuery($sql, $uid);  
+                syslog(LOG_NOTICE, "Dashboard.showNewSearch(): query: $sql");
+                $db->executeQuery($sql);
+                
+                $sql = "INSERT INTO setting (uid,param_name,param_value) VALUES ('?','timerange','?');";
+                $sql  = $db->makeQuery($sql, $uid, json_encode($range_array));
+                syslog(LOG_NOTICE, "Dashboard.showNewSearch(): query: $sql");
+                $db->executeQuery($sql);
+            }
+            if (count($search_array) > 0) {
+                $sql = "DELETE FROM setting WHERE uid='?' AND param_name='search'";
+                $sql  = $db->makeQuery($sql, $uid);  
+                syslog(LOG_NOTICE, "Dashboard.showNewSearch(): query: $sql");
+                $db->executeQuery($sql);
+                
+                $sql = "INSERT INTO setting (uid,param_name,param_value) VALUES ('?','search','?');";
+                $sql  = $db->makeQuery($sql, $uid, json_encode($search_array));
+                syslog(LOG_NOTICE, "Dashboard.showNewSearch(): query: $sql");
+                $db->executeQuery($sql);
+            }
+        }
+        $server_name = $_SERVER['SERVER_NAME'];
+        $server_port = $_SERVER['SERVER_PORT'];
+        $send_to = "http://$server_name:$server_port/#/dashboard/search";
+        syslog(LOG_NOTICE, "Dashboard:showNewSearch(): redirecting to $send_to");
+        header("Location: $send_to");
+        exit();
+    }
+
     public function newDashboard(){
         
         //if (!is_string($json)) $json = json_encode($json);                                        

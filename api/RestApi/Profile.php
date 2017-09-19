@@ -133,8 +133,12 @@ class Profile {
 
         	 $query = "SELECT param_name, param_value FROM setting WHERE uid='?' AND param_name = '?' limit 200";
         	 $query  = $db->makeQuery($query, $uid, $id);
-                 $rows = $db->loadObjectArray($query);
-		 foreach($rows as $row) $bigobj[$row->param_name] =  $row->param_value;		 		 
+             $rows = $db->loadObjectArray($query);
+		     foreach($rows as $row) {
+                $param_name = $row['param_name'];
+                $param_valu = $row['param_value'];
+                $bigobj[$param_name] = $param_valu;
+            } 		 
         }
 
         return $bigobj;

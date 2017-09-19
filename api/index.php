@@ -182,6 +182,7 @@ Server::create(WEBROOT.'api/v1', 'RestApi\Auth') //base entry points `/admin`
       ->addPostRoute('store/([0-9A-Za-z_-]+)', 'postIdDashboard')
       ->addPostRoute('store', 'postDashboard')
       ->addPostRoute('upload', 'uploadDashboard')
+      ->addGetRoute('newSearch', 'showNewSearch')
       ->addGetRoute('store/1', 'newDashboard')
       ->addPostRoute('menu/([0-9A-Za-z_-]+)', 'postMenuDashboard')
       ->addGetRoute('node', 'getNode')
