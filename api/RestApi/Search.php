@@ -1942,6 +1942,9 @@ class Search {
 		$calldata['dbnode'] = $data->dbnode;
 		$calldata['micro_ts'] = $data->micro_ts;
 		$calldata['ruri_user'] = $data->ruri_user;
+		$calldata['cseq'] = split(' ', $data->cseq)[0];
+		$calldata['from_user'] = $data->from_user;
+		$calldata['to_user'] = $data->to_user;
 		if(!empty($data->source_alias)) { $calldata['source_alias'] = $data->source_alias;}
 		if(!empty($data->destination_alias)) { $calldata['destination_alias'] = $data->destination_alias;}
 		$calldata['source_ip'] = $data->source_ip;
