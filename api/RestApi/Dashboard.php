@@ -244,9 +244,31 @@ class Dashboard {
                 $db->executeQuery($sql);
             }
         }
-        $server_name = $_SERVER['SERVER_NAME'];
-        $server_port = $_SERVER['SERVER_PORT'];
-        $send_to = "http://$server_name:$server_port/#/dashboard/search";
+        if (array_key_exists("HTTP_VIA", $_SERVER)) {
+            $via_elems = explode(" ", $_SERVER['HTTP_VIA']);
+            if (array_key_exists(1, $via_elems)) {
+                $via = trim($via_elems[1]);
+                $send_to = "http://$via/#/dashboard/search";
+                syslog(LOG_NOTICE, "Dashboard.showNewSearch(): getting via $via from headers");
+            }
+            else {
+                $server_name = $_SERVER['SERVER_NAME'];
+                $server_port = $_SERVER['SERVER_PORT'];
+                $send_to = "http://$server_name:$server_port/#/dashboard/search";
+                syslog(LOG_WARNING, "Dashboard.showNewSearch(): via header $via should have at least two components, only seeing one. sending to requested server name");
+            }
+        }
+        elseif (array_key_exists("via", $_GET)) {
+            $via = $_GET["via"];
+            $send_to = "http://$via/#/dashboard/search";
+            syslog(LOG_NOTICE, "Dashboard.showNewSearch(): getting via $via from query parameters");
+        }
+        else {
+            $server_name = $_SERVER['SERVER_NAME'];
+            $server_port = $_SERVER['SERVER_PORT'];
+            $send_to = "http://$server_name:$server_port/#/dashboard/search";
+            syslog(LOG_NOTICE, "Dashboard.showNewSearch(): no via, sending to requested server name");
+        }
         syslog(LOG_NOTICE, "Dashboard:showNewSearch(): redirecting to $send_to");
         header("Location: $send_to");
         exit();
