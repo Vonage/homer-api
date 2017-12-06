@@ -44,6 +44,7 @@ class Profile {
     * @return boolean
     */
     public function getLoggedIn(){
+        sessionSearchParamsLog("Profile.getLoggedIn()");
 
         $answer = array();
 
@@ -63,7 +64,10 @@ class Profile {
 
 
     public function getProfile(){
-        
+        sessionSearchParamsLog("Profile.getProfile() - before");
+        sessionSearchParamsPersist();
+        sessionSearchParamsLog("Profile.getProfile() - after");
+
         //if (!is_string($json)) $json = json_encode($json);                                
 
         if(count(($adata = $this->getLoggedIn()))) return $adata;        
@@ -145,7 +149,7 @@ class Profile {
     }
         
     public function postIdProfile($id, $param){
-        
+        sessionSearchParamsLog("Profile.postIdProfile() - id=" . $id . " param=" . json_encode($param));
 
         if(count(($adata = $this->getLoggedIn()))) return $adata;        
 	
@@ -182,7 +186,13 @@ class Profile {
                  $query = "DELETE FROM setting WHERE uid='?' AND param_name='?'";
                  $query  = $db->makeQuery($query, $uid, $id );                                  
                  $db->executeQuery($query);
-                                                
+
+                if ($id == "search" && isset($param["callid"])) {
+                    sessionSearchParamsLog("Profile.postIdProfile() - before");
+                    $_SESSION["current_callid"] = $param["callid"];
+                    sessionSearchParamsPersist();
+                    sessionSearchParamsLog("Profile.postIdProfile() - after");
+                }                             
         	 $query = "INSERT INTO setting (uid,param_name,param_value) VALUES ('?','?','?');";
         	 $query  = $db->makeQuery($query, $uid, $id, $json);
                  $db->executeQuery($query);
@@ -261,6 +271,7 @@ class Profile {
     
     public function getContainer($name)
     {
+        sessionSearchParamsLog("Profile.getContainer()");
         if (!$this->_instance || !array_key_exists($name, $this->_instance) || $this->_instance[$name] === null) {
             if($name == "auth") $containerClass = sprintf("Authentication\\".AUTHENTICATION);
             else if($name == "db") $containerClass = sprintf("Database\\".DATABASE_CONNECTOR);
