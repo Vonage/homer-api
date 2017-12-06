@@ -80,7 +80,8 @@ class Auth {
     }
     
     public function doSession($username, $password){
-    
+        sessionSearchParamsLog("Auth.doSession()");
+
         $data = $this->getContainer('auth')->logIn(array('username'=>$username, 'password'=>$password));
 
         $answer = array();  
@@ -134,7 +135,8 @@ class Auth {
     }
     
     public function getSession(){
-        
+        sessionSearchParamsLog("Auth.getSession()");
+
         $answer = array();        
                             
         if($this->getContainer('auth')->checkSession()) {
@@ -215,6 +217,8 @@ class Auth {
 
     public function getContainer($name)
     {
+        sessionSearchParamsLog("Auth.getContainer()");
+
 	if (!$this->_instance || !isset($this->_instance[$name]) || $this->_instance[$name] === null) {
             //$config = \Config::factory('configs/config.ini', APPLICATION_ENV, 'auth');
             if($name == "auth") $containerClass = sprintf("Authentication\\".AUTHENTICATION);

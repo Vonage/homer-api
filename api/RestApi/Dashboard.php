@@ -27,6 +27,124 @@
 
 namespace RestAPI;
 
+function sessionSearchParamsPersist() {
+    if (!isset($_SESSION['uid'])) {
+        return;
+    }
+    if (!isset($_SESSION["saved_searches"])) {
+        return;
+    }
+    if (!isset($_SESSION["current_callid"])) {
+        return;
+    }
+    $callid = $_SESSION["current_callid"];
+    if (!isset($_SESSION["saved_searches"][$callid])) {
+        return;
+    }
+    $fromto = $_SESSION["saved_searches"][$callid];
+    if (!isset($fromto["from"])) {
+        return;
+    }
+    if (!isset($fromto["to"])) {
+        return;
+    }
+    $from = $fromto["from"];
+    $to   = $fromto["to"];
+    $uid  = $_SESSION['uid'];
+
+    $callid_arr = array("callid" => $callid);
+    $fromto_arr = array("from" => date("Y-m-d\TH:i:s", $from), "to" => date("Y-m-d\TH:i:s", $to));
+
+    $containerClass = sprintf("Database\\".DATABASE_CONNECTOR);
+    $db = new $containerClass();
+    $db->dbconnect();
+
+    $sql  = $db->makeQuery("DELETE FROM setting WHERE uid = '?' AND param_name = 'search'", $uid);
+    $db->executeQuery($sql);
+
+    $sql  = $db->makeQuery("DELETE FROM setting WHERE uid = '?' AND param_name = 'timerange'", $uid);
+    $db->executeQuery($sql); 
+
+    $sql  = $db->makeQuery("INSERT INTO setting (uid, param_name, param_value) VALUES ('?', 'search', '?');", $uid, json_encode($callid_arr));
+    $db->executeQuery($sql);
+
+    $sql  = $db->makeQuery("INSERT INTO setting (uid, param_name, param_value) VALUES ('?', 'timerange', '?');", $uid, json_encode($fromto_arr));
+    $db->executeQuery($sql);
+}
+function sessionSearchParamsSave($queryParams) {
+    if (!isset($_SESSION["saved_searches"])) {
+        $_SESSION["saved_searches"] = array();
+    }
+    $callid = "";
+    $from   = "";
+    $to     = "";
+    foreach ($queryParams as $param_name => $param_value) {
+        if ($param_name == "from") {
+            $from = $param_value;
+        }
+        else if ($param_name == "to") {
+            $to = $param_value;
+        }
+        else if ($param_name == "callid") {
+            $callid = $param_value;
+        }
+    }
+    if ($callid != "") {
+        $_SESSION["saved_searches"][$callid] = array("callid" => $callid, "from" => $from, "to" => $to);
+        $_SESSION["current_callid"] = $callid;
+    }
+}
+function sessionSearchParamsLog($message) {
+    $request_params   = "<not-set>";
+    $session_login    = "<not-set>";
+    $current_callid   = "<not-set>";
+    $store_search     = "<not-set>";
+    $store_timerange  = "<not-set>";
+
+    if (isset($_REQUEST)) {
+        $request_params = json_encode($_REQUEST);
+    }
+    if (isset($_SESSION["current_callid"])) {
+        $current_callid = $_SESSION["current_callid"];
+    }
+    if (isset($_SESSION["loggedin"])) {
+        $session_login = $_SESSION["loggedin"];
+    }
+
+    if (isset($_SESSION['uid'])) {
+        $uid = $_SESSION['uid'];
+        $containerClass = sprintf("Database\\".DATABASE_CONNECTOR);
+        $db = new $containerClass();
+        $db->dbconnect();
+
+        $sql = $db->makeQuery("SELECT param_name, param_value FROM setting WHERE uid = '?' AND param_name IN ( 'timerange', 'search')", $uid);
+
+        $rows = $db->loadObjectArray($sql);
+	    foreach($rows as $row) {
+            $param_name  = $row["param_name"];
+            $param_value = $row["param_value"];
+
+            if ($param_name == "timerange") {
+                $store_timerange = $param_value;
+            }
+            elseif ($param_name == "search") {
+                $store_search = $param_value;
+            }
+        }
+    }
+    error_log("\n" . date("Y-m-d H:i:s") . " - login=" . $session_login . " current_callid=" . $current_callid . " message=" . $message . "\n" .
+        "    Request: (params=" . $request_params . ") \n" .
+        "    Store:   (search=" . $store_search . ", timerange=" . $store_timerange . ")\n",
+        3, "/var/tmp/homer_flow.log");
+
+    if (isset($_SESSION["saved_searches"])) {
+        $saved_searches = $_SESSION["saved_searches"];
+        foreach ($saved_searches as $saved_search) {
+            error_log("    Session:  (" . json_encode($saved_search) . ")\n", 3, "/var/tmp/homer_flow.log");
+        }
+    }
+}
+
 class Dashboard {
     
     private $authmodule = true;
@@ -48,6 +166,7 @@ class Dashboard {
     * @return boolean
     */
     public function getLoggedIn(){
+        sessionSearchParamsLog("Dashboard.getLoggedIn()");
 
 	$answer = array();
 
@@ -67,7 +186,8 @@ class Dashboard {
     
 
     public function getDashboard(){
-        
+        sessionSearchParamsLog("Dashboard.getDashboard()");
+
         //if (!is_string($json)) $json = json_encode($json);                                
 
          if(count(($adata = $this->getLoggedIn()))) return $adata;
@@ -168,7 +288,7 @@ class Dashboard {
     }
     
     public function getIdDashboard($id){
-        
+        sessionSearchParamsLog("Dashboard.getIdDashboard()");
         
         if(count(($adata = $this->getLoggedIn()))) return $adata;
          
@@ -199,51 +319,11 @@ class Dashboard {
     }
     
     public function showNewSearch($query) {
-        $paramtype = gettype($query);
-        syslog(LOG_NOTICE, "Dashboard:showNewSearch(): paramtype is $paramtype");
-        foreach ($query as $param_name => $param_value) {
-            syslog(LOG_NOTICE, "Dashboard:showNewSearch(): param_name is $param_name, param_value is $param_value");
-        }
-        $search_array = array();
-        $range_array = array();
-        
-        foreach ($query as $param_name => $param_value) {
-            if ($param_name == "from" or $param_name == "to") {
-                $range_array[$param_name] = date("Y-m-d\TH:i:s", $param_value);
-            }
-            else {
-                $search_array[$param_name] = $param_value;
-            }
-        }
+        sessionSearchParamsLog("Dashboard.showNewSearch() - before");
+        sessionSearchParamsSave($query);
+        sessionSearchParamsPersist();
+        sessionSearchParamsLog("Dashboard.showNewSearch() - after");
 
-        $db = $this->getContainer('db');
-        $db->dbconnect();
-
-        if (isset($_SESSION['uid'])) {
-            $uid = $_SESSION['uid'];
-            if (count($range_array) > 0) {
-                $sql = "DELETE FROM setting WHERE uid='?' AND param_name='timerange'";
-                $sql  = $db->makeQuery($sql, $uid);  
-                syslog(LOG_NOTICE, "Dashboard.showNewSearch(): query: $sql");
-                $db->executeQuery($sql);
-                
-                $sql = "INSERT INTO setting (uid,param_name,param_value) VALUES ('?','timerange','?');";
-                $sql  = $db->makeQuery($sql, $uid, json_encode($range_array));
-                syslog(LOG_NOTICE, "Dashboard.showNewSearch(): query: $sql");
-                $db->executeQuery($sql);
-            }
-            if (count($search_array) > 0) {
-                $sql = "DELETE FROM setting WHERE uid='?' AND param_name='search'";
-                $sql  = $db->makeQuery($sql, $uid);  
-                syslog(LOG_NOTICE, "Dashboard.showNewSearch(): query: $sql");
-                $db->executeQuery($sql);
-                
-                $sql = "INSERT INTO setting (uid,param_name,param_value) VALUES ('?','search','?');";
-                $sql  = $db->makeQuery($sql, $uid, json_encode($search_array));
-                syslog(LOG_NOTICE, "Dashboard.showNewSearch(): query: $sql");
-                $db->executeQuery($sql);
-            }
-        }
         if (array_key_exists("HTTP_VIA", $_SERVER)) {
             $via_elems = explode(" ", $_SERVER['HTTP_VIA']);
             if (array_key_exists(1, $via_elems)) {
@@ -426,7 +506,8 @@ class Dashboard {
     }    
     
     public function getNode(){
-        
+        sessionSearchParamsLog("Dashboard.getNode()");
+
 	$db = $this->getContainer('db');
         $db->select_db(DB_CONFIGURATION);
         $db->dbconnect();
@@ -492,6 +573,8 @@ class Dashboard {
     
     public function getContainer($name)
     {
+        sessionSearchParamsLog("Dashboard.getContainer()");
+
         if (!$this->_instance || !isset($this->_instance[$name]) || $this->_instance[$name] === null) {
             //$config = \Config::factory('configs/config.ini', APPLICATION_ENV, 'auth');
             if($name == "auth") $containerClass = sprintf("Authentication\\".AUTHENTICATION);
