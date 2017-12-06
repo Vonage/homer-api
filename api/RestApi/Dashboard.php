@@ -140,7 +140,7 @@ function sessionSearchParamsLog($message) {
     if (isset($_SESSION["saved_searches"])) {
         $saved_searches = $_SESSION["saved_searches"];
         foreach ($saved_searches as $saved_search) {
-            error_log("    Session:  (" . json_encode($saved_search) . ")\n");
+            error_log("    Session:  (" . json_encode($saved_search) . ")\n", 3, "/var/tmp/homer_flow.log");
         }
     }
 }
