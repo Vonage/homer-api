@@ -339,7 +339,7 @@ class Client
     {
 	//Fix for MAC Safary and Chrome + 2 for response
         if (php_sapi_name() !== 'cli' )
-            header('Content-Length: '.strlen($pMessage));
+            header('Content-Length: '.strlen($pMessage)+2);
     }
 
     /**
