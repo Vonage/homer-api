@@ -260,8 +260,13 @@ class Search {
 							$fields = WEBRTC_FIELDS_CAPTURE;
 						}
 						else {
-							$layerHelper['table']['base'] = "sip_capture";
-							$layerHelper['table']['type'] = $query_type;
+                            $layerHelper['table']['base'] = "sip_capture";
+                            if (strpos($node['dbtables'], "pbx") !== false and $query_type == "call") {
+                                $layerHelper['table']['type'] = "pbx";
+                            }
+                            else {
+                                $layerHelper['table']['type'] = $query_type;
+                            }
 							$fields = FIELDS_CAPTURE;
 						}
 						$layerHelper['values'] = array();
@@ -476,8 +481,13 @@ class Search {
 						}
 						else {
 							$layerHelper['table']['base'] = "sip_capture";
-							$layerHelper['table']['type'] = $query_type;
-							$layerHelper['where']['param'] = $callwhere;
+                            if (strpos($node['dbtables'], "pbx") !== false and $query_type == "call") {
+                                 $layerHelper['table']['type'] = "pbx";
+                            }   
+                            else {
+                                $layerHelper['table']['type'] = $query_type;
+                            }  
+                            $layerHelper['where']['param'] = $callwhere;
 							$fields = FIELDS_CAPTURE;
 						}
 						$layerHelper['table']['timestamp'] = $tkey;
@@ -665,8 +675,13 @@ class Search {
 						else {
 							$fields = FIELDS_CAPTURE;
 							$layerHelper['table']['base'] = "sip_capture";
-							$layerHelper['table']['type'] = $query_type;
-							$layerHelper['where']['param'] = $callwhere;
+                            if (strpos($node['dbtables'], "pbx") !== false and $query_type == "call") {
+                                $layerHelper['table']['type'] = "pbx";
+                            }   
+                            else {
+                                $layerHelper['table']['type'] = $query_type;
+                            }  
+                            $layerHelper['where']['param'] = $callwhere;
 						}
 						if($full) $fields.=", msg ";
 						$layerHelper['table']['timestamp'] = $tkey;
@@ -989,8 +1004,13 @@ class Search {
 						}
 						else {
 							$layerHelper['table']['base'] = "sip_capture";
-							$layerHelper['table']['type'] = $query_type;
-							$layerHelper['values'][] = FIELDS_CAPTURE;
+                            if (strpos($node['dbtables'], "pbx") !== false and $query_type == "call") {
+                                $layerHelper['table']['type'] = "pbx";
+                            }   
+                            else {
+                                $layerHelper['table']['type'] = $query_type;
+                            }  
+                            $layerHelper['values'][] = FIELDS_CAPTURE;
 						}
 						$layerHelper['values'][] = "'".$query_type."' as trans";
 						$layerHelper['values'][] = "'".$node['name']."' as dbnode";
@@ -1316,8 +1336,13 @@ class Search {
 						}
 						else {
 							$layerHelper['table']['base'] = "sip_capture";
-							$layerHelper['table']['type'] = $query_type;
-							$layerHelper['where']['param'] = $callwhere;
+                            if (strpos($node['dbtables'], "pbx") !== false and $query_type == "call") {
+                                $layerHelper['table']['type'] = "pbx";
+                            }   
+                            else {
+                                $layerHelper['table']['type'] = $query_type;
+                            }  
+                            $layerHelper['where']['param'] = $callwhere;
 							$layerHelper['values'][] = FIELDS_CAPTURE;
 						}
 						$layerHelper['values'][] = "'".$query_type."' as trans";
